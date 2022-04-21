@@ -13,6 +13,67 @@ provider "aws" {
   region = var.aws_region
 }
 
+resource "aws_apigatewayv2_api" "tf-upskill-api" {
+  name          = "tf-upskill-api"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_stage" "tf-upskill-api-stage" {
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+  name   = "upskill-api-stage"
+  auto_deploy = "true"
+}
+
+resource "aws_apigatewayv2_integration" "tf-get-presigned-url" {
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+
+  integration_type = "AWS_PROXY"
+  integration_uri = aws_lambda_function.tf-get-presigned-url.invoke_arn
+  integration_method = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "tf-get-presigned-url" {
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+
+  route_key = "GET /presigned-url"
+  target    = "integrations/${aws_apigatewayv2_integration.tf-get-presigned-url.id}"
+}
+
+resource "aws_lambda_permission" "tf-presigned-url" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tf-get-presigned-url.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "tf-get-photos" {
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+
+  integration_type = "AWS_PROXY"
+  integration_uri = aws_lambda_function.tf-get-user-photos.invoke_arn
+  integration_method = "POST"
+  payload_format_version = "2.0" 
+}
+
+resource "aws_apigatewayv2_route" "tf-get-photos" {
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+
+  route_key = "GET /photos"
+  target    = "integrations/${aws_apigatewayv2_integration.tf-get-photos.id}"
+}
+
+resource "aws_lambda_permission" "tf-get-user-photos" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tf-get-user-photos.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
+}
+
 resource "aws_s3_bucket" "tf-upskill-bucket" {
 	bucket = "tf-upskill-bucket-0123"
 }
@@ -43,7 +104,7 @@ name = "iam_for_lambda"
       Sid    = ""
       Principal = {
         Service = "lambda.amazonaws.com"
-   	}
+	}
       }	
     ]
   })
@@ -130,6 +191,18 @@ resource "aws_lambda_function" "tf-save-file-info" {
 	source_code_hash = filebase64sha256("zips/save-file-info.jar")
 	runtime = "java11"
 	timeout = 120
+	memory_size = 512
+}
+
+resource "aws_lambda_function" "tf-get-presigned-url" {
+	filename = "zips/get-presigned-url.jar"
+	function_name = "tf-get-presigned-url"
+	role = aws_iam_role.iam_for_lambda.arn
+	handler = "com.example.LambdaRequestHandler::handleRequest"
+	
+	source_code_hash = filebase64sha256("zips/get-presigned-url.jar")
+	runtime = "java11"
+	timeout = 30
 	memory_size = 512
 }
 
