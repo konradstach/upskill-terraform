@@ -13,7 +13,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-esource "aws_s3_bucket" "tf-upskill-bucket" {
+resource "aws_s3_bucket" "tf-upskill-bucket" {
 	bucket = "tf-upskill-bucket-0123"
 }
 
@@ -89,6 +89,20 @@ resource "aws_iam_role_policy" "lambda_policy" {
         "cloudwatch:List*"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+	"dynamodb:PutItem"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+	"SNS:Publish"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -105,4 +119,73 @@ resource "aws_lambda_function" "tf-get-user-photos" {
 	runtime = "java11"
 	timeout = 60
 	memory_size = 512
+}
+
+resource "aws_lambda_function" "tf-save-file-info" {
+	filename = "zips/save-file-info.jar"
+	function_name = "tf-save-file-info"
+	role = aws_iam_role.iam_for_lambda.arn
+	handler = "com.example.SaveFileInfoHandler::handleRequest"
+	
+	source_code_hash = filebase64sha256("zips/save-file-info.jar")
+	runtime = "java11"
+	timeout = 120
+	memory_size = 512
+}
+
+resource "aws_lambda_permission" "allow_bucket" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tf-save-file-info.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.tf-upskill-bucket.arn
+}
+
+resource "aws_sns_topic" "tf-s3-event-notification-topic" {
+  name = "tf-s3-event-notification-topic"
+
+  policy = <<POLICY
+{
+    "Version":"2012-10-17",
+    "Statement":[{
+        "Effect": "Allow",
+        "Principal": { "Service": "s3.amazonaws.com" },
+        "Action": "SNS:Publish",
+        "Resource": "arn:aws:sns:*:*:tf-s3-event-notification-topic",
+        "Condition":{
+            "ArnLike":{"aws:SourceArn":"${aws_s3_bucket.tf-upskill-bucket.arn}"}
+        }
+    }]
+}
+POLICY
+}
+
+resource "aws_sns_topic_subscription" "email-target" {
+  topic_arn = aws_sns_topic.tf-s3-event-notification-topic.arn
+  protocol  = "email"
+  endpoint  = "konrad.stach00@gmail.com"
+}
+
+resource "aws_dynamodb_table" "tf-photos-table" {
+  name           = "tf-photos-table"
+  billing_mode   = "PROVISIONED"
+  read_capacity  = 1
+  write_capacity = 1
+  hash_key       = "file_name"
+
+  attribute {
+    name = "file_name"
+    type = "S"
+  }
+}
+
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.tf-upskill-bucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.tf-save-file-info.arn
+    events              = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_lambda_permission.allow_bucket]
 }
