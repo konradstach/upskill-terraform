@@ -38,6 +38,8 @@ resource "aws_apigatewayv2_route" "tf-get-presigned-url" {
 
   route_key = "GET /presigned-url"
   target    = "integrations/${aws_apigatewayv2_integration.tf-get-presigned-url.id}"
+  authorization_type = "JWT"
+  authorizer_id = "${aws_apigatewayv2_authorizer.tf-presigned-url-authorizer.id}"
 }
 
 resource "aws_lambda_permission" "tf-presigned-url" {
@@ -47,6 +49,27 @@ resource "aws_lambda_permission" "tf-presigned-url" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "tf-lambda-authorizer" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tf-lambda-authorizer.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_authorizer" "tf-presigned-url-authorizer" {
+  api_id           = aws_apigatewayv2_api.tf-upskill-api.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "tf-presigned-url-authorizer"
+
+  jwt_configuration {
+    audience = ["${aws_cognito_user_pool_client.tf-cognito-user-pool-client.id}"]
+    issuer   = "https://${aws_cognito_user_pool.tf-upskill-cognito-user-pool.endpoint}"
+  }
 }
 
 resource "aws_apigatewayv2_integration" "tf-get-photos" {
@@ -63,6 +86,8 @@ resource "aws_apigatewayv2_route" "tf-get-photos" {
 
   route_key = "GET /photos"
   target    = "integrations/${aws_apigatewayv2_integration.tf-get-photos.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id = "${aws_apigatewayv2_authorizer.tf-lambda-authorizer.id}"
 }
 
 resource "aws_lambda_permission" "tf-get-user-photos" {
@@ -72,6 +97,16 @@ resource "aws_lambda_permission" "tf-get-user-photos" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_authorizer" "tf-lambda-authorizer" {
+  api_id           = aws_apigatewayv2_api.tf-upskill-api.id
+  authorizer_type  = "REQUEST"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "tf-get-user-photos-authorizer"
+  authorizer_uri   = aws_lambda_function.tf-lambda-authorizer.invoke_arn
+  authorizer_payload_format_version = "2.0"
+  enable_simple_responses = "true"
 }
 
 resource "aws_s3_bucket" "tf-upskill-bucket" {
@@ -206,6 +241,18 @@ resource "aws_lambda_function" "tf-get-presigned-url" {
 	memory_size = 512
 }
 
+resource "aws_lambda_function" "tf-lambda-authorizer" {
+	filename = "zips/lambda-authorizer.zip"
+	function_name = "tf-lambda-authorizer"
+	role = aws_iam_role.iam_for_lambda.arn
+	handler = "index.handler"
+
+	source_code_hash = filebase64sha256("zips/lambda-authorizer.zip")
+	runtime = "nodejs14.x"
+	timeout = 60
+	memory_size = 512
+}
+
 resource "aws_lambda_permission" "allow_bucket" {
   statement_id  = "AllowExecutionFromS3Bucket"
   action        = "lambda:InvokeFunction"
@@ -277,7 +324,7 @@ resource "aws_cognito_user" "tf-cognito-user" {
   }
 }
 
-resource "aws_cognito_user_pool_client" "tf-cognito-user-pool_client" {
+resource "aws_cognito_user_pool_client" "tf-cognito-user-pool-client" {
   name                                 = "tf-cognito-user-pool-client"
   user_pool_id                         = aws_cognito_user_pool.tf-upskill-cognito-user-pool.id
   callback_urls                        = ["http://localhost:3000"]
@@ -285,6 +332,8 @@ resource "aws_cognito_user_pool_client" "tf-cognito-user-pool_client" {
   allowed_oauth_flows                  = ["implicit"]
   allowed_oauth_scopes                 = ["phone", "email", "openid", "aws.cognito.signin.user.admin", "profile"]
   supported_identity_providers         = ["COGNITO"]
+  
+  access_token_validity = 8
 }
 
 resource "aws_cognito_user_pool_domain" "tf-upskill-user-pool-domain" {
