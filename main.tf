@@ -174,61 +174,7 @@ resource "aws_iam_role" "iam_for_lambda" {
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "lambda_policy"
   role = aws_iam_role.iam_for_lambda.id
-
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "*"
-    },
-    {
-	"Effect": "Allow",
-	"Action": [
-	  "s3:*",
-	  "s3-object-lambda:*"
-	],
-	"Resource":"*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "lambda:InvokeFunction"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "cloudwatch:Describe*",
-        "cloudwatch:Get*",
-        "cloudwatch:List*"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-	"dynamodb:PutItem"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-	"SNS:Publish"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-POLICY
+  policy = data.aws_iam_policy_document.example.json
 }
 
 resource "aws_lambda_function" "tf-get-user-photos" {
