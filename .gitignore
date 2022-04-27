@@ -1,4 +1,5 @@
 zips
+.idea/
 
 # Compiled files
 *.tfstate
