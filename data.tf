@@ -11,18 +11,6 @@ data "aws_iam_policy_document" "assume_role_policy" {
   }
 }
 
-data "aws_iam_policy_document" "lambda-invoke-function" {
-  statement {
-    actions = [
-      "lambda:InvokeFunction",
-    ]
-
-    resources = [
-      "*"
-    ]
-  }
-}
-
 data "aws_iam_policy_document" "create-logs" {
   statement {
     actions = [
