@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "tf-get-user-photos" {
   filename      = "zips/get-user-photos.jar"
   function_name = "tf-get-user-photos"
-  role          = aws_iam_role.iam_for_lambda.arn
+  role          = aws_iam_role.get-user-photos.arn
   handler       = "com.example.LambdaRequestHandler::handleRequest"
 
   source_code_hash = filebase64sha256("zips/get-user-photos.jar")
@@ -13,7 +13,7 @@ resource "aws_lambda_function" "tf-get-user-photos" {
 resource "aws_lambda_function" "tf-save-file-info" {
   filename      = "zips/save-file-info.jar"
   function_name = "tf-save-file-info"
-  role          = aws_iam_role.iam_for_lambda.arn
+  role          = aws_iam_role.save-file-info.arn
   handler       = "com.example.SaveFileInfoHandler::handleRequest"
 
   source_code_hash = filebase64sha256("zips/save-file-info.jar")
@@ -25,7 +25,7 @@ resource "aws_lambda_function" "tf-save-file-info" {
 resource "aws_lambda_function" "tf-get-presigned-url" {
   filename      = "zips/get-presigned-url.jar"
   function_name = "tf-get-presigned-url"
-  role          = aws_iam_role.iam_for_lambda.arn
+  role          = aws_iam_role.get-presigned-url.arn
   handler       = "com.example.LambdaRequestHandler::handleRequest"
 
   source_code_hash = filebase64sha256("zips/get-presigned-url.jar")
@@ -37,7 +37,7 @@ resource "aws_lambda_function" "tf-get-presigned-url" {
 resource "aws_lambda_function" "tf-lambda-authorizer" {
   filename      = "zips/lambda-authorizer.zip"
   function_name = "tf-lambda-authorizer"
-  role          = aws_iam_role.iam_for_lambda.arn
+  role          = aws_iam_role.lambda-authorizer.arn
   handler       = "index.handler"
 
   source_code_hash = filebase64sha256("zips/lambda-authorizer.zip")
@@ -49,7 +49,7 @@ resource "aws_lambda_function" "tf-lambda-authorizer" {
 resource "aws_lambda_function" "tf-process-photo" {
   filename      = "zips/process-photo.jar"
   function_name = "tf-process-photo"
-  role          = aws_iam_role.iam_for_lambda.arn
+  role          = aws_iam_role.process-photo.arn
   handler       = "com.example.LambdaRequestHandler::handleRequest"
 
   source_code_hash = filebase64sha256("zips/process-photo.jar")

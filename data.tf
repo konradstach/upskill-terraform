@@ -3,7 +3,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
     actions = [
       "sts:AssumeRole"
     ]
-    effect = "Allow"
+    effect  = "Allow"
     principals {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
@@ -11,7 +11,19 @@ data "aws_iam_policy_document" "assume_role_policy" {
   }
 }
 
-data "aws_iam_policy_document" "example" {
+data "aws_iam_policy_document" "lambda-invoke-function" {
+  statement {
+    actions = [
+      "lambda:InvokeFunction",
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "create-logs" {
   statement {
     actions = [
       "logs:CreateLogGroup",
@@ -23,57 +35,81 @@ data "aws_iam_policy_document" "example" {
       "*",
     ]
   }
+}
 
+data "aws_iam_policy_document" "s3-list" {
   statement {
     actions = [
-      "s3:*",
-      "s3-object-lambda:*"
+      "s3:List*"
     ]
 
     resources = [
-      "*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "lambda:InvokeFunction"
-    ]
-
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "cloudwatch:Describe*",
-      "cloudwatch:Get*",
-      "cloudwatch:List*"
-    ]
-
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "dynamodb:PutItem"
-    ]
-
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "SNS:Publish"
-    ]
-
-    resources = [
-      "*"
+      "arn:aws:s3:::${var.s3_bucket_name}",
     ]
   }
 }
+
+data "aws_iam_policy_document" "s3-get-object" {
+  statement {
+    actions = [
+      "s3:GetObject"
+    ]
+
+    resources = [
+      "arn:aws:s3:::${var.s3_bucket_name}/*",
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "s3-put-object" {
+  statement {
+    actions = [
+      "s3:PutObject"
+    ]
+
+    resources = [
+      "arn:aws:s3:::${var.s3_bucket_name}/*",
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "dynamodb-put-item" {
+  statement {
+    actions = [
+      "dynamodb:PutItem",
+    ]
+
+    resources = [
+      "arn:aws:dynamodb:${var.region}:${var.account_id}:table/${var.table_name}"
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "sns-publish" {
+  statement {
+    actions = [
+      "SNS:Publish",
+    ]
+
+    resources = [
+      "arn:aws:sns:${var.region}:${var.account_id}:${var.notification-topic}"
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "save-file-info" {
+  source_policy_documents = [
+    data.aws_iam_policy_document.dynamodb-put-item.json,
+    data.aws_iam_policy_document.sns-publish.json,
+    data.aws_iam_policy_document.create-logs.json
+  ]
+}
+
+data "aws_iam_policy_document" "process-photo" {
+  source_policy_documents = [
+    data.aws_iam_policy_document.create-logs.json,
+    data.aws_iam_policy_document.s3-put-object.json,
+    data.aws_iam_policy_document.s3-get-object.json,
+  ]
+}
+

@@ -28,7 +28,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 }
 
 resource "aws_sns_topic" "tf-s3-event-notification-topic" {
-  name = "tf-s3-event-notification-topic"
+  name = var.notification-topic
 
   policy = <<POLICY
 {
@@ -53,7 +53,7 @@ resource "aws_sns_topic_subscription" "email-target" {
 }
 
 resource "aws_dynamodb_table" "tf-photos-table" {
-  name           = "tf-photos-table"
+  name           = var.table_name
   billing_mode   = "PROVISIONED"
   read_capacity  = 1
   write_capacity = 1
