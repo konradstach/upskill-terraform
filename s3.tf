@@ -1,28 +1,27 @@
-resource "aws_s3_bucket" "tf-upskill-bucket" {
-  bucket = var.s3_bucket_name
-}
+module "tf-upskill-bucket" {
+  source = "./modules/aws-s3-private-bucket"
 
-resource "aws_s3_bucket_acl" "example" {
-  bucket = aws_s3_bucket.tf-upskill-bucket.id
-  acl    = "private"
-}
-
-resource "aws_s3_bucket_public_access_block" "example" {
-  bucket = aws_s3_bucket.tf-upskill-bucket.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  s3_bucket_name = "tf-upskill-bucket-0123"
 }
 
 resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = aws_s3_bucket.tf-upskill-bucket.id
+  bucket = module.tf-upskill-bucket.bucket_id
 
   lambda_function {
-    lambda_function_arn = aws_lambda_function.tf-save-file-info.arn
+    lambda_function_arn = module.tf-save-file-info.lambda_arn
     events              = ["s3:ObjectCreated:*"]
   }
 
-  depends_on = [aws_lambda_permission.allow_bucket]
+#  depends_on = [aws_lambda_permission.allow_bucket]
 }
+
+#resource "aws_s3_bucket_notification" "bucket_notification" {
+#  bucket = module.tf-upskill-bucket.bucket_id
+#
+#  lambda_function {
+#    lambda_function_arn = module.tf-save-file-info.lambda_arn
+#    events              = ["s3:ObjectCreated:*"]
+#  }
+#
+#  depends_on = [module.tf-save-file-info]
+#}

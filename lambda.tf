@@ -1,103 +1,69 @@
-resource "aws_lambda_function" "tf-get-user-photos" {
-  filename      = "zips/get-user-photos.jar"
-  function_name = "tf-get-user-photos"
-  role          = aws_iam_role.get-user-photos.arn
-  handler       = "com.example.LambdaRequestHandler::handleRequest"
+module "tf-get-user-photos"{
+  source = "./modules/aws-lambda"
 
-  source_code_hash = filebase64sha256("zips/get-user-photos.jar")
-  runtime          = "java11"
-  timeout          = 60
-  memory_size      = 512
+  lambda_filename = "zips/get-user-photos.jar"
+  lambda_function_name = "tf-get-user-photos"
+  lambda_role_arn = aws_iam_role.get-user-photos.arn
+  lambda_handler = "com.example.LambdaRequestHandler::handleRequest"
+
+  lambda_runtime = "java11"
+  api_execution_arn = aws_apigatewayv2_api.tf-upskill-api.execution_arn
+  lambda_permission_statement_id = "AllowExecutionFromAPIGateway"
+  lambda_permission_principal = "apigateway.amazonaws.com"
 }
 
-resource "aws_lambda_function" "tf-save-file-info" {
-  filename      = "zips/save-file-info.jar"
-  function_name = "tf-save-file-info"
-  role          = aws_iam_role.save-file-info.arn
-  handler       = "com.example.SaveFileInfoHandler::handleRequest"
+module "tf-save-file-info"{
+  source = "./modules/aws-lambda"
 
-  source_code_hash = filebase64sha256("zips/save-file-info.jar")
-  runtime          = "java11"
-  timeout          = 120
-  memory_size      = 512
+  lambda_filename = "zips/save-file-info.jar"
+  lambda_function_name = "tf-save-file-info"
+  lambda_role_arn = aws_iam_role.save-file-info.arn
+  lambda_handler = "com.example.SaveFileInfoHandler::handleRequest"
+
+  lambda_runtime = "java11"
+  api_execution_arn = module.tf-upskill-bucket.bucket_arn
+  lambda_permission_statement_id = "AllowExecutionFromS3Bucket"
+  lambda_permission_principal = "s3.amazonaws.com"
 }
 
-resource "aws_lambda_function" "tf-get-presigned-url" {
-  filename      = "zips/get-presigned-url.jar"
-  function_name = "tf-get-presigned-url"
-  role          = aws_iam_role.get-presigned-url.arn
-  handler       = "com.example.LambdaRequestHandler::handleRequest"
+module "tf-get-presigned-url"{
+  source = "./modules/aws-lambda"
 
-  source_code_hash = filebase64sha256("zips/get-presigned-url.jar")
-  runtime          = "java11"
-  timeout          = 30
-  memory_size      = 512
+  lambda_filename = "zips/get-presigned-url.jar"
+  lambda_function_name = "tf-get-presigned-url"
+  lambda_role_arn = aws_iam_role.get-presigned-url.arn
+  lambda_handler = "com.example.LambdaRequestHandler::handleRequest"
+
+  lambda_runtime = "java11"
+  api_execution_arn = aws_apigatewayv2_api.tf-upskill-api.execution_arn
+  lambda_permission_statement_id = "AllowExecutionFromAPIGateway"
+  lambda_permission_principal = "apigateway.amazonaws.com"
 }
 
-resource "aws_lambda_function" "tf-lambda-authorizer" {
-  filename      = "zips/lambda-authorizer.zip"
-  function_name = "tf-lambda-authorizer"
-  role          = aws_iam_role.lambda-authorizer.arn
-  handler       = "index.handler"
+module "tf-process-photo"{
+  source = "./modules/aws-lambda"
 
-  source_code_hash = filebase64sha256("zips/lambda-authorizer.zip")
-  runtime          = "nodejs14.x"
-  timeout          = 60
-  memory_size      = 512
+  lambda_filename = "zips/process-photo.jar"
+  lambda_function_name = "tf-process-photo"
+  lambda_role_arn = aws_iam_role.process-photo.arn
+  lambda_handler = "com.example.LambdaRequestHandler::handleRequest"
+
+  lambda_runtime = "java11"
+  api_execution_arn = aws_apigatewayv2_api.tf-upskill-api.execution_arn
+  lambda_permission_statement_id = "AllowExecutionFromAPIGateway"
+  lambda_permission_principal = "apigateway.amazonaws.com"
 }
 
-resource "aws_lambda_function" "tf-process-photo" {
-  filename      = "zips/process-photo.jar"
-  function_name = "tf-process-photo"
-  role          = aws_iam_role.process-photo.arn
-  handler       = "com.example.LambdaRequestHandler::handleRequest"
+module "tf-lambda-authorizer"{
+  source = "./modules/aws-lambda"
 
-  source_code_hash = filebase64sha256("zips/process-photo.jar")
-  runtime          = "java11"
-  timeout          = 120
-  memory_size      = 512
-}
+  lambda_filename = "zips/lambda-authorizer.zip"
+  lambda_function_name = "tf-lambda-authorizer"
+  lambda_role_arn = aws_iam_role.lambda-authorizer.arn
+  lambda_handler = "index.handler"
 
-resource "aws_lambda_permission" "allow_bucket" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tf-save-file-info.arn
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.tf-upskill-bucket.arn
-}
-
-resource "aws_lambda_permission" "tf-presigned-url" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tf-get-presigned-url.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
-}
-
-resource "aws_lambda_permission" "tf-lambda-authorizer" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tf-lambda-authorizer.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
-}
-
-resource "aws_lambda_permission" "tf-get-user-photos" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tf-get-user-photos.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
-}
-
-resource "aws_lambda_permission" "tf-process-photo" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tf-process-photo.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.tf-upskill-api.execution_arn}/*/*"
+  lambda_runtime = "nodejs14.x"
+  api_execution_arn = aws_apigatewayv2_api.tf-upskill-api.execution_arn
+  lambda_permission_statement_id = "AllowExecutionFromAPIGateway"
+  lambda_permission_principal = "apigateway.amazonaws.com"
 }

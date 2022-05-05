@@ -97,7 +97,7 @@ data "aws_iam_policy_document" "process-photo" {
   source_policy_documents = [
     data.aws_iam_policy_document.create-logs.json,
     data.aws_iam_policy_document.s3-put-object.json,
-    data.aws_iam_policy_document.s3-get-object.json,
+    data.aws_iam_policy_document.s3-get-object.json
   ]
 }
 

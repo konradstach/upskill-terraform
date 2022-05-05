@@ -22,7 +22,7 @@ resource "aws_apigatewayv2_integration" "tf-get-presigned-url" {
   api_id = aws_apigatewayv2_api.tf-upskill-api.id
 
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.tf-get-presigned-url.invoke_arn
+  integration_uri        = module.tf-get-presigned-url.invoke_arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
@@ -52,7 +52,7 @@ resource "aws_apigatewayv2_integration" "tf-get-photos" {
   api_id = aws_apigatewayv2_api.tf-upskill-api.id
 
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.tf-get-user-photos.invoke_arn
+  integration_uri        = module.tf-get-user-photos.invoke_arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
@@ -70,7 +70,7 @@ resource "aws_apigatewayv2_integration" "tf-process-photo" {
   api_id = aws_apigatewayv2_api.tf-upskill-api.id
 
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.tf-process-photo.invoke_arn
+  integration_uri        = module.tf-process-photo.invoke_arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
@@ -80,7 +80,7 @@ resource "aws_apigatewayv2_authorizer" "tf-lambda-authorizer" {
   authorizer_type                   = "REQUEST"
   identity_sources                  = ["$request.header.Authorization"]
   name                              = "tf-get-user-photos-authorizer"
-  authorizer_uri                    = aws_lambda_function.tf-lambda-authorizer.invoke_arn
+  authorizer_uri                    = module.tf-lambda-authorizer.invoke_arn
   authorizer_payload_format_version = "2.0"
   enable_simple_responses           = "true"
 }
