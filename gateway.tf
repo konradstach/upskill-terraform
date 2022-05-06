@@ -9,70 +9,16 @@ resource "aws_apigatewayv2_stage" "tf-upskill-api-stage" {
   auto_deploy = "true"
 }
 
-resource "aws_apigatewayv2_route" "tf-get-presigned-url" {
-  api_id = aws_apigatewayv2_api.tf-upskill-api.id
-
-  route_key          = "GET /presigned-url"
-  target             = "integrations/${aws_apigatewayv2_integration.tf-get-presigned-url.id}"
-  authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.tf-presigned-url-authorizer.id
-}
-
-resource "aws_apigatewayv2_integration" "tf-get-presigned-url" {
-  api_id = aws_apigatewayv2_api.tf-upskill-api.id
-
-  integration_type       = "AWS_PROXY"
-  integration_uri        = module.tf-get-presigned-url.invoke_arn
-  integration_method     = "POST"
-  payload_format_version = "2.0"
-}
-
-resource "aws_apigatewayv2_authorizer" "tf-presigned-url-authorizer" {
+resource "aws_apigatewayv2_authorizer" "tf-jwt-authorizer" {
   api_id           = aws_apigatewayv2_api.tf-upskill-api.id
   authorizer_type  = "JWT"
   identity_sources = ["$request.header.Authorization"]
-  name             = "tf-presigned-url-authorizer"
+  name             = "tf-jwt-authorizer"
 
   jwt_configuration {
     audience = [aws_cognito_user_pool_client.tf-cognito-user-pool-client.id]
     issuer   = "https://${aws_cognito_user_pool.tf-upskill-cognito-user-pool.endpoint}"
   }
-}
-
-resource "aws_apigatewayv2_route" "tf-get-photos" {
-  api_id = aws_apigatewayv2_api.tf-upskill-api.id
-
-  route_key          = "GET /photos"
-  target             = "integrations/${aws_apigatewayv2_integration.tf-get-photos.id}"
-  authorization_type = "CUSTOM"
-  authorizer_id      = aws_apigatewayv2_authorizer.tf-lambda-authorizer.id
-}
-
-resource "aws_apigatewayv2_integration" "tf-get-photos" {
-  api_id = aws_apigatewayv2_api.tf-upskill-api.id
-
-  integration_type       = "AWS_PROXY"
-  integration_uri        = module.tf-get-user-photos.invoke_arn
-  integration_method     = "POST"
-  payload_format_version = "2.0"
-}
-
-resource "aws_apigatewayv2_route" "tf-process-photo" {
-  api_id = aws_apigatewayv2_api.tf-upskill-api.id
-
-  route_key          = "POST /photos/monochrome"
-  target             = "integrations/${aws_apigatewayv2_integration.tf-process-photo.id}"
-  authorization_type = "CUSTOM"
-  authorizer_id      = aws_apigatewayv2_authorizer.tf-lambda-authorizer.id
-}
-
-resource "aws_apigatewayv2_integration" "tf-process-photo" {
-  api_id = aws_apigatewayv2_api.tf-upskill-api.id
-
-  integration_type       = "AWS_PROXY"
-  integration_uri        = module.tf-process-photo.invoke_arn
-  integration_method     = "POST"
-  payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_authorizer" "tf-lambda-authorizer" {
@@ -84,3 +30,34 @@ resource "aws_apigatewayv2_authorizer" "tf-lambda-authorizer" {
   authorizer_payload_format_version = "2.0"
   enable_simple_responses           = "true"
 }
+
+module "tf-get-presigned-url-endpoint"{
+  source = "./modules/aws-api-endpoint"
+
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+  route_key = "GET /presigned-url"
+  route_authorization_type = "JWT"
+  route_authorizer_id = aws_apigatewayv2_authorizer.tf-jwt-authorizer.id
+  integration_uri = module.tf-process-photo.invoke_arn
+}
+
+module "tf-get-photos-endpoint"{
+  source = "./modules/aws-api-endpoint"
+
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+  route_key = "GET /photos"
+  route_authorization_type = "CUSTOM"
+  route_authorizer_id = aws_apigatewayv2_authorizer.tf-lambda-authorizer.id
+  integration_uri = module.tf-get-user-photos.invoke_arn
+}
+
+module "tf-process-photo-endpoint"{
+  source = "./modules/aws-api-endpoint"
+
+  api_id = aws_apigatewayv2_api.tf-upskill-api.id
+  route_key = "POST /photos/monochrome"
+  route_authorization_type = "CUSTOM"
+  route_authorizer_id = aws_apigatewayv2_authorizer.tf-lambda-authorizer.id
+  integration_uri = module.tf-process-photo.invoke_arn
+}
+

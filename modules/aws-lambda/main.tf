@@ -20,4 +20,3 @@ resource "aws_lambda_permission" "aws-lambda-permission" {
 }
 
 
-
