@@ -1,11 +1,11 @@
 resource "aws_apigatewayv2_api" "tf-upskill-api" {
-  name          = "tf-upskill-api"
+  name          = "${var.app-prefix}upskill-api"
   protocol_type = "HTTP"
 }
 
 resource "aws_apigatewayv2_stage" "tf-upskill-api-stage" {
   api_id      = aws_apigatewayv2_api.tf-upskill-api.id
-  name        = "upskill-api-stage"
+  name        = "${var.app-prefix}upskill-api-stage"
   auto_deploy = "true"
 }
 
@@ -13,7 +13,7 @@ resource "aws_apigatewayv2_authorizer" "tf-jwt-authorizer" {
   api_id           = aws_apigatewayv2_api.tf-upskill-api.id
   authorizer_type  = "JWT"
   identity_sources = ["$request.header.Authorization"]
-  name             = "tf-jwt-authorizer"
+  name             = "${var.app-prefix}jwt-authorizer"
 
   jwt_configuration {
     audience = [aws_cognito_user_pool_client.tf-cognito-user-pool-client.id]

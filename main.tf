@@ -1,5 +1,5 @@
 resource "aws_sns_topic" "tf-s3-event-notification-topic" {
-  name = var.notification-topic
+  name = "${var.app-prefix}s3-event-notification-topic"
 }
 
 resource "aws_sns_topic_subscription" "email-target" {

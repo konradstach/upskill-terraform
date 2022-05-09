@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "tf-upskill-cognito-user-pool" {
-  name = "tf-upskill-pool"
+  name = "${var.app-prefix}upskill-pool"
 }
 
 resource "aws_cognito_user" "tf-cognito-user" {
@@ -13,7 +13,7 @@ resource "aws_cognito_user" "tf-cognito-user" {
 }
 
 resource "aws_cognito_user_pool_client" "tf-cognito-user-pool-client" {
-  name                                 = "tf-cognito-user-pool-client"
+  name                                 = "${var.app-prefix}cognito-user-pool-client"
   user_pool_id                         = aws_cognito_user_pool.tf-upskill-cognito-user-pool.id
   callback_urls                        = ["http://localhost:3000"]
   allowed_oauth_flows_user_pool_client = true
@@ -25,6 +25,6 @@ resource "aws_cognito_user_pool_client" "tf-cognito-user-pool-client" {
 }
 
 resource "aws_cognito_user_pool_domain" "tf-upskill-user-pool-domain" {
-  domain       = "tf-upskill-user-pool-domain"
+  domain       = "${var.app-prefix}upskill-user-pool-domain"
   user_pool_id = aws_cognito_user_pool.tf-upskill-cognito-user-pool.id
 }

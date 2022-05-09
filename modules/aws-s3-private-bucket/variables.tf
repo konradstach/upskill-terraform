@@ -1,5 +1,5 @@
 variable "s3_bucket_name" {
-  default = "tf-upskill-bucket-0123"
+  type = string
 }
 
 variable "s3_bucket_notification_lambda_arn" {

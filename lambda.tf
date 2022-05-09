@@ -2,7 +2,7 @@ module "tf-get-user-photos" {
   source = "./modules/aws-lambda"
 
   lambda_filename      = "zips/get-user-photos.jar"
-  lambda_function_name = "tf-get-user-photos"
+  lambda_function_name = "${var.app-prefix}get-user-photos"
   lambda_handler       = "com.example.LambdaRequestHandler::handleRequest"
 
   lambda_runtime                 = "java11"
@@ -22,7 +22,7 @@ module "tf-save-file-info" {
   source = "./modules/aws-lambda"
 
   lambda_filename      = "zips/save-file-info.jar"
-  lambda_function_name = "tf-save-file-info"
+  lambda_function_name = "${var.app-prefix}save-file-info"
   lambda_handler       = "com.example.SaveFileInfoHandler::handleRequest"
 
   lambda_runtime                 = "java11"
@@ -54,7 +54,7 @@ module "tf-get-presigned-url" {
   source = "./modules/aws-lambda"
 
   lambda_filename      = "zips/get-presigned-url.jar"
-  lambda_function_name = "tf-get-presigned-url"
+  lambda_function_name = "${var.app-prefix}get-presigned-url"
   lambda_handler       = "com.example.LambdaRequestHandler::handleRequest"
 
   lambda_runtime                 = "java11"
@@ -67,7 +67,7 @@ module "tf-process-photo" {
   source = "./modules/aws-lambda"
 
   lambda_filename      = "zips/process-photo.jar"
-  lambda_function_name = "tf-process-photo"
+  lambda_function_name = "${var.app-prefix}process-photo"
   lambda_handler       = "com.example.LambdaRequestHandler::handleRequest"
 
   lambda_runtime                 = "java11"
@@ -95,7 +95,7 @@ module "tf-lambda-authorizer" {
   source = "./modules/aws-lambda"
 
   lambda_filename      = "zips/lambda-authorizer.zip"
-  lambda_function_name = "tf-lambda-authorizer"
+  lambda_function_name = "${var.app-prefix}lambda-authorizer"
   lambda_handler       = "index.handler"
 
   lambda_runtime                 = "nodejs14.x"
