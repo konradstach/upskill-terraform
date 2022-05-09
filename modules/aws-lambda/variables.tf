@@ -8,10 +8,6 @@ variable "lambda_function_name" {
   type        = string
 }
 
-variable "lambda_role_arn" {
-  type = string
-}
-
 variable "lambda_handler" {
   type = string
 }
@@ -30,4 +26,19 @@ variable "lambda_permission_statement_id" {
 
 variable "lambda_permission_principal" {
   type = string
+}
+
+variable "lambda_iam_policy_statements" {
+  description = "Map of dynamic policy statements to attach to Lambda Function role"
+  type        = any
+  default     = {
+    logs = {
+      actions = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+      resources = ["*"]
+    }
+  }
 }
