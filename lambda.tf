@@ -44,7 +44,7 @@ module "tf-save-file-info" {
       resources = ["arn:aws:dynamodb:${var.region}:${var.account_id}:table/${var.table_name}"]
     },
     sns = {
-      actions   = ["SNS:Publish"]
+      actions   = ["sns:Publish"]
       resources = ["arn:aws:sns:${var.region}:${var.account_id}:${var.notification-topic}"]
     }
   }
